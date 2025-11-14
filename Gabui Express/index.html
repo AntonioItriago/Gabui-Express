@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Interactivo Gabui.Express</title>
+    <style>
+        /* ==================================== */
+        /* ESTILOS CSS BASE */
+        /* ==================================== */
+        body { 
+            font-family: 'Arial', sans-serif; 
+            background-color: #f4f4f4; 
+            margin: 0; 
+            padding: 20px; 
+            color: #333;
+        }
+        h1, h2 { 
+            text-align: center; 
+            color: #d9534f;
+        }
+        
+        /* --- ESTILOS DEL CARRUSEL --- */
+        #carrusel-contenedor {
+            position: relative;
+            width: 100%;
+            max-width: 450px; 
+            margin: 20px auto;
+            border: 5px solid #ffc107;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            overflow: hidden; 
+            border-radius: 10px;
+        }
+        
+        .pagina-catalogo {
+            position: relative;
+            width: 100%;
+            display: none; 
+        }
+        .pagina-catalogo.activa {
+            display: block; 
+        }
+        
+        .imagen-promos {
+            width: 100%; 
+            height: auto;
+            display: block;
+        }
+
+        /* --- BOTONES DE NAVEGACIÓN --- */
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            z-index: 20;
+            font-size: 20px;
+            border-radius: 5px;
+        }
+        #prevBtn { left: 5px; }
+        #nextBtn { right: 5px; }
+
+        /* --- BOTONES FLOTANTES DE PRODUCTO (AÑADIR) --- */
+        .boton-flotante {
+            position: absolute; 
+            background-color: rgba(255, 193, 7, 0.95); 
+            color: #333;
+            border: 2px solid #333;
+            padding: 6px 10px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 15; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            transition: background-color 0.2s;
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            min-width: 100px; 
+        }
+        .boton-flotante:hover {
+            background-color: #ffd700;
+        }
+        /* Estilos específicos para los botones +/- dentro del control flotante */
+        .boton-flotante button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%; /* Botones redondos */
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            line-height: 1;
+            padding: 0;
+            margin: 0 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .boton-flotante span {
+            font-weight: bold;
+            padding: 0 5px;
+        }
+
+        /* --- VISTA DEL CARRO Y ADICIONALES --- */
+        #contador-carrito { 
+            background: #d9534f; 
+            color: white; 
+            border-radius: 50%; 
+            padding: 4px 8px; 
+            font-weight: bold; 
+            font-size: 12px; 
+            margin-left: 5px; 
+        }
+        .header-carrito { 
+            display: flex; 
+            justify-content: flex-end; 
+            align-items: center; 
+            padding: 10px; 
+            background-color: white; 
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .adicional { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px; 
+            border-bottom: 1px dashed #ccc; 
+            background-color: white;
+            margin-bottom: 5px;
+            border-radius: 5px;
+        }
+        .adicional span { font-weight: bold; }
+        
+        /* Estilos de los controles de cantidad en la sección de adicionales */
+        #seccion-adicionales .item-carrito-controls button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        #seccion-adicionales .item-carrito-controls span {
+            font-weight: bold;
+            padding: 0 5px;
+        }
+        
+        .adicional button {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #detalle-carrito { 
+            margin-top: 20px; 
+            padding: 15px; 
+            background-color: white; 
+            border-radius: 8px; 
+        }
+        #detalle-carrito ul { list-style: none; padding: 0; }
+        
+        /* Estilos de cada ítem en el carrito con botones de +/- */
+        .item-carrito { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 10px; 
+            border-bottom: 1px dotted #eee; 
+            padding-bottom: 5px; 
+        }
+        .item-carrito-info {
+            flex-grow: 1; 
+        }
+        .item-carrito-controls {
+             display: flex; 
+             align-items: center;
+        }
+        .item-carrito-controls button {
+            background-color: #d9534f;
+            color: white;
+            border: none;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .item-carrito-controls span {
+            font-weight: bold;
+            padding: 0 5px;
+            min-width: 15px;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        #btn-finalizar {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background-color: #25d366; 
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.2s;
+        }
+        #btn-finalizar:hover {
+            background-color: #128c7e;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-carrito">
+        🛒 **Tu Carrito** <span id="contador-carrito">0</span>
+    </div>
+
+    <h1>🍔 Menú de Promociones Gabui.Express</h1>
+
+    <div id="carrusel-contenedor">
+        <button id="prevBtn" class="nav-btn">❮</button>
+
+        <div class="pagina-catalogo activa" id="page-1">
+            <img src="1000732999.jpg" alt="Promos Hamburguesas" class="imagen-promos">
+
+            <div class="boton-flotante" style="top: 30%; left: 5%;" data-product-id="P001" data-price-text="(16.5$)">Añadir (16.5$)</div>
+            <div class="boton-flotante" style="top: 35%; right: 5%;" data-product-id="P002" data-price-text="(5.5$)">Añadir (5.5$)</div>
+            <div class="boton-flotante" style="top: 60%; left: 5%;" data-product-id="P003" data-price-text="(7$)">Añadir (7$)</div>
+            <div class="boton-flotante" style="top: 65%; right: 5%;" data-product-id="P004" data-price-text="(8$)">Añadir (8$)</div>
+            <div class="boton-flotante" style="top: 85%; left: 5%;" data-product-id="P005" data-price-text="(12$)">Añadir (12$)</div>
+        </div>
+
+        <div class="pagina-catalogo" id="page-2">
+            <img src="1000733000.jpg" alt="Promos Hamburguesas V2" class="imagen-promos">
+
+            <div class="boton-flotante" style="top: 25%; left: 5%;" data-product-id="P006" data-price-text="(6.5$)">Añadir (6.5$)</div>
+            <div class="boton-flotante" style="top: 25%; right: 5%;" data-product-id="P007" data-price-text="(13$)">Añadir (13$)</div>
+            <div class="boton-flotante" style="top: 50%; left: 5%;" data-product-id="P008" data-price-text="(15$)">Añadir (15$)</div>
+            <div class="boton-flotante" style="top: 55%; right: 5%;" data-product-id="P009" data-price-text="(19$)">Añadir (19$)</div>
+            <div class="boton-flotante" style="top: 80%; left: 5%;" data-product-id="P010" data-price-text="(10.5$)">Añadir (10.5$)</div>
+        </div>
+
+        <div class="pagina-catalogo" id="page-3">
+            <img src="1000733001.jpg" alt="Promos Salchipapas" class="imagen-promos">
+
+            <div class="boton-flotante" style="top: 45%; right: 5%;" data-product-id="S001" data-price-text="(2.550 BS)">Añadir (2.550 BS)</div>
+            <div class="boton-flotante" style="top: 80%; right: 5%;" data-product-id="S002" data-price-text="(2.040 BS)">Añadir (2.040 BS)</div>
+        </div>
+        
+        <div class="pagina-catalogo" id="page-4">
+            <img src="1000733002.jpg" alt="Promo Entre Panas V1" class="imagen-promos">
+
+            <div class="boton-flotante" style="top: 35%; right: 5%;" data-product-id="E001" data-price-text="(1.530 BS)">Añadir (1.530 BS)</div>
+            <div class="boton-flotante" style="top: 70%; right: 5%;" data-product-id="E002" data-price-text="(2.550 BS)">Añadir (2.550 BS)</div>
+        </div>
+
+        <div class="pagina-catalogo" id="page-5">
+            <img src="1000733003.jpg" alt="Promo Entre Panas V2" class="imagen-promos">
+
+            <div class="boton-flotante" style="top: 70%; right: 5%;" data-product-id="E003" data-price-text="(3.060 BS)">Añadir (3.060 BS)</div>
+        </div>
+
+
+        <button id="nextBtn" class="nav-btn">❯</button>
+    </div>
+
+    <hr>
+
+    <h2>🥤 Adicionales (Bebidas, Postres, etc.)</h2>
+    <div id="seccion-adicionales">
+        </div>
+    <hr>
+    
+    <h2>📋 Tu Pedido Final</h2>
+    <div id="detalle-carrito">
+        <p>El carrito está vacío. Empieza a seleccionar tus promos.</p>
+    </div>
+
+    <button id="btn-finalizar" onclick="consultarPrecios()">
+        Enviar Pedido por WhatsApp
+    </button>
+    
+    <p style="text-align: center; font-size: 0.8em; margin-top: 15px;">
+        *La Tasa BCV y el precio final de delivery serán confirmados al enviar el pedido.
+    </p>
+
+<script>
+    // --- ESTRUCTURA DE DATOS (Mapeo de TUS productos) ---
+    const productos = [
+        // Promociones
+        { id: 'P001', nombre: '4 Crispy Bui + papas + refresco 1L', precio: 16.5, moneda: '$' },
+        { id: 'P002', nombre: 'Hot Grill Junior + papas fritas', precio: 5.5, moneda: '$' },
+        { id: 'P003', nombre: '1 Crispy Bui + Burger de carne', precio: 7.0, moneda: '$' },
+        { id: 'P004', nombre: 'Hot Grill Jumbo + papas fritas', precio: 8.0, moneda: '$' },
+        { id: 'P005', nombre: '1 Crispy Bui + Burger de carne + papas + refresco 1L', precio: 12.0, moneda: '$' },
+        { id: 'P006', nombre: '1 Crispy Bui + papas fritas', precio: 6.5, moneda: '$' },
+        { id: 'P007', nombre: '2 Crispy bui + media ración de papas + refresco 1L', precio: 13.0, moneda: '$' },
+        { id: 'P008', nombre: '3 crispy Bui + Salchipapa Pequeña + refresco 1L', precio: 15.0, moneda: '$' },
+        { id: 'P009', nombre: '2 crispy Bui + 2 Burger de carne + papas + refresco 1L', precio: 19.0, moneda: '$' },
+        { id: 'P010', nombre: '3 burger crispy', precio: 10.5, moneda: '$' },
+        { id: 'S001', nombre: '3 salchipapas medianas + refresco 1L', precio: 2550, moneda: 'BS' },
+        { id: 'S002', nombre: '3 salchipapas individuales + refresco 1L', precio: 2040, moneda: 'BS' },
+        { id: 'E001', nombre: '2 HotGrill junior + refresco 1L', precio: 1530, moneda: 'BS' },
+        { id: 'E002', nombre: '2 HotGrill jumbos con papas fritas + refresco 1L', precio: 2550, moneda: 'BS' },
+        { id: 'E003', nombre: '2 pollo crispy + 2 carne + media papa + refresco 1L', precio: 3060, moneda: 'BS' },
+
+        // Adicionales
+        { id: 'A001', nombre: 'Refresco 1.5L (Coca-Cola)', precio: 2.0, moneda: '$' },
+        { id: 'A003', nombre: 'Postre de la Casa', precio: 3.5, moneda: '$' },
+        { id: 'A004', nombre: 'Salsa Extra', precio: 0.5, moneda: '$' },
+    ];
+    
+    // Lista de solo IDs de Adicionales para el renderizado especial
+    const adicionalesIds = ['A001', 'A003', 'A004'];
+
+    let carrito = [];
+    // TASA BCV ACTUALIZADA: RECUERDA EDITAR ESTE VALOR MANUALMENTE CADA DÍA.
+    const TASA_BCV_HOY = 233.56; 
+
+    // --- LÓGICA DEL CARRUSEL ---
+    let paginaActual = 0;
+    const paginas = document.querySelectorAll('.pagina-catalogo');
+    const totalPaginas = paginas.length;
+
+    function mostrarPagina(index) {
+        paginas.forEach((pagina, i) => {
+            pagina.classList.remove('activa');
+        });
+        paginaActual = (index + totalPaginas) % totalPaginas;
+        paginas[paginaActual].classList.add('activa');
+        
+        actualizarBotonesFlotantes();
+    }
+
+    document.getElementById('nextBtn').addEventListener('click', () => {
+        mostrarPagina(paginaActual + 1);
+    });
+
+    document.getElementById('prevBtn').addEventListener('click', () => {
+        mostrarPagina(paginaActual - 1);
+    });
+    
+    // Función central para añadir/quitar/cambiar la cantidad del producto
+    function cambiarCantidad(productoId, delta) {
+        let itemIndex = carrito.findIndex(item => item.id === productoId);
+        
+        if (itemIndex === -1) {
+            // Producto no está en el carrito, añadir si delta es positivo
+            if (delta > 0) {
+                const productoAAgregar = productos.find(p => p.id === productoId);
+                if (!productoAAgregar) return;
+                carrito.push({
+                    ...productoAAgregar,
+                    cantidad: delta
+                });
+            }
+        } else {
+            // Producto ya está en el carrito, ajustar cantidad
+            let nuevoCantidad = carrito[itemIndex].cantidad + delta;
+
+            if (nuevoCantidad > 0) {
+                carrito[itemIndex].cantidad = nuevoCantidad;
+            } else {
+                // Eliminar si la cantidad llega a 0
+                carrito.splice(itemIndex, 1);
+            }
+        }
+
+        // Refrescar todas las vistas después de un cambio
+        actualizarVistaCarrito();
+        actualizarBotonesFlotantes(); 
+        renderizarAdicionales(); 
+    }
+    
+    // Función simple de adición (compatible con el código HTML de Adicionales sin controles)
+    function agregarAlCarrito(productoId) {
+        cambiarCantidad(productoId, 1);
+    }
+    
+    // Función para actualizar los botones flotantes del carrusel (los que cambian a - 1 +)
+    function actualizarBotonesFlotantes() {
+        const botonesActivos = paginas[paginaActual].querySelectorAll('.boton-flotante');
+
+        botonesActivos.forEach(btn => {
+            const id = btn.getAttribute('data-product-id');
+            const precioTexto = btn.getAttribute('data-price-text');
+            const item = carrito.find(p => p.id === id);
+
+            if (item) {
+                // Producto en carrito: mostrar control +/-
+                btn.innerHTML = `
+                    <button onclick="cambiarCantidad('${id}', -1)">-</button>
+                    <span>${item.cantidad}</span>
+                    <button onclick="cambiarCantidad('${id}', 1)">+</button>
+                `;
+            } else {
+                // Producto NO en carrito: mostrar botón "Añadir"
+                btn.innerHTML = `Añadir ${precioTexto}`;
+                btn.onclick = () => cambiarCantidad(id, 1);
+            }
+        });
+    }
+
+    // Función para renderizar los controles de cantidad en la sección de Adicionales
+    function renderizarAdicionales() {
+        const contenedor = document.getElementById('seccion-adicionales');
+        contenedor.innerHTML = ''; // Limpiar
+
+        adicionalesIds.forEach(id => {
+            const producto = productos.find(p => p.id === id);
+            if (!producto) return;
+            
+            const item = carrito.find(p => p.id === id);
+            
+            let botonHTML;
+            let precioTexto = producto.moneda === '$' ? `$${producto.precio.toFixed(2)}` : `${producto.precio.toFixed(2)} ${producto.moneda}`;
+
+            if (item) {
+                // Producto en carrito: mostrar control +/-
+                botonHTML = `
+                    <div class="item-carrito-controls">
+                        <button onclick="cambiarCantidad('${id}', -1)">-</button>
+                        <span>${item.cantidad}</span>
+                        <button onclick="cambiarCantidad('${id}', 1)">+</button>
+                    </div>
+                `;
+            } else {
+                // Producto NO en carrito: mostrar botón "Añadir"
+                botonHTML = `<button onclick="cambiarCantidad('${id}', 1)">➕ Añadir</button>`;
+            }
+
+            contenedor.innerHTML += `
+                <div class="adicional">
+                    <span>${producto.nombre} - ${precioTexto}</span>
+                    ${botonHTML}
+                </div>
+            `;
+        });
+    }
+    
+    // --- LÓGICA DEL CARRITO (Resumen Final) ---
+    
+    function calcularTotalItems() {
+      return carrito.reduce((total, item) => total + item.cantidad, 0);
+    }
+
+    function actualizarVistaCarrito() {
+        const totalItems = calcularTotalItems();
+        document.getElementById('contador-carrito').textContent = totalItems;
+        
+        const listaCarrito = document.getElementById('detalle-carrito');
+        listaCarrito.innerHTML = ''; 
+
+        if (carrito.length === 0) {
+            listaCarrito.innerHTML = '<p>El carrito está vacío. Empieza a seleccionar tus promos.</p>';
+            actualizarBotonesFlotantes(); 
+            renderizarAdicionales(); 
+            return;
+        }
+
+        let contenidoHTML = '<ul>';
+        let totalPagarUSD = 0;
+        let totalPagarBS = 0;
+
+        carrito.forEach(item => {
+            let subtotal = item.precio * item.cantidad;
+            let precioUnitario = item.moneda === '$' ? `$${item.precio.toFixed(2)}` : `${item.precio.toFixed(2)} ${item.moneda}`;
+            let subtotalFormateado = item.moneda === '$' ? `$${subtotal.toFixed(2)}` : `${subtotal.toFixed(2)} ${item.moneda}`;
+
+            if (item.moneda === '$') {
+                totalPagarUSD += subtotal;
+            } else if (item.moneda === 'BS') {
+                totalPagarBS += subtotal;
+            }
+            
+            // Renderizado del ítem con botones de control en el resumen
+            contenidoHTML += `
+                <li class="item-carrito">
+                    <div class="item-carrito-info">
+                        ${item.nombre} (${precioUnitario}) - Subtotal: <strong>${subtotalFormateado}</strong>
+                    </div>
+                    <div class="item-carrito-controls">
+                        <button onclick="cambiarCantidad('${item.id}', -1)">-</button>
+                        <span>${item.cantidad}</span>
+                        <button onclick="cambiarCantidad('${item.id}', 1)">+</button>
+                    </div>
+                </li>
+            `;
+        });
+        
+        contenidoHTML += '</ul>';
+        contenidoHTML += '<h4>Resumen de Totales:</h4>';
+        if (totalPagarUSD > 0) {
+            contenidoHTML += `<p>Total en USD: <strong>$${totalPagarUSD.toFixed(2)}</strong></p>`;
+        }
+        if (totalPagarBS > 0) {
+            contenidoHTML += `<p>Total en BS (Sin Conversión): <strong>${totalPagarBS.toFixed(2)} BS</strong></p>`;
+        }
+        
+        let totalGeneralBS = totalPagarBS + (totalPagarUSD * TASA_BCV_HOY);
+        
+        if (totalGeneralBS > 0) {
+            contenidoHTML += `<p style="color: #007bff; font-weight: bold;">TOTAL GENERAL ESTIMADO (BS): ${totalGeneralBS.toFixed(2)} BS</p>`;
+            contenidoHTML += `<p style="font-size: 0.8em; color: #666;">(Tasa BCV de hoy: ${TASA_BCV_HOY})</p>`;
+        }
+        
+        listaCarrito.innerHTML = contenidoHTML;
+        renderizarAdicionales(); 
+    }
+
+    // --- FUNCIÓN FINAL DE PEDIDO POR WHATSAPP ---
+    function consultarPrecios() {
+        if (carrito.length === 0) {
+            alert("¡El carrito está vacío! Por favor, añade productos antes de enviar el pedido.");
+            return;
+        }
+        
+        let mensaje = "¡Hola! Quiero hacer un pedido con Gabui.Express. Aquí está mi lista:\n\n";
+        let totalUSD = 0;
+        let totalBS = 0;
+
+        carrito.forEach((item, index) => {
+            let subtotal = item.precio * item.cantidad;
+
+            if (item.moneda === '$') {
+                totalUSD += subtotal;
+                mensaje += `${index + 1}. ${item.cantidad}x ${item.nombre} - $${subtotal.toFixed(2)}\n`;
+            } else if (item.moneda === 'BS') {
+                totalBS += subtotal;
+                mensaje += `${index + 1}. ${item.cantidad}x ${item.nombre} - ${subtotal.toFixed(2)} BS\n`;
+            }
+        });
+
+        mensaje += "\n----------------------------------";
+        mensaje += `\nTOTAL ESTIMADO EN USD: $${totalUSD.toFixed(2)}`;
+        mensaje += `\nTOTAL ESTIMADO EN BS (sin convers. de $): ${totalBS.toFixed(2)} BS`;
+        mensaje += `\n----------------------------------`;
+        mensaje += `\nPor favor, confirmen el precio final, la tasa BCV del día y el costo de delivery. ¡Gracias!`;
+        
+        const mensajeCodificado = encodeURIComponent(mensaje);
+        const numeroWhatsApp = "584122409530"; 
+
+        const urlWhatsApp = `https://api.whatsapp.com/send?phone=${numeroWhatsApp}&text=${mensajeCodificado}`;
+        
+        window.open(urlWhatsApp, '_blank');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Inicializa todo
+        mostrarPagina(0); 
+        actualizarVistaCarrito();
+        renderizarAdicionales();
+    });
+</script>
+</body>
+</html>
